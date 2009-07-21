@@ -2,7 +2,11 @@ This distribution includes a stripped down version of Template::Stash::XS
 for the purpose of tracking down a bug when using DateTime objects.
 See http://rt.cpan.org/Public/Bug/Display.html?id=48020
 
-To build and run the test:
+UPDATE: TJC's report seems to suggest that the bug has nothing to do with 
+DateTime, but is caused by a string eval in a subroutine.  See the new
+t/string_eval.t test.  https://rt.cpan.org/Ticket/Display.html?id=47929
+
+To build and run the tests:
 
   $ perl Makefile.PL
   $ make 
@@ -74,4 +78,31 @@ The final 4 lines will be missing
   - TT_RET_CODEREF
   ok 2 - The year is 2009 (subroutine returning DateTime object)
 
+UPDATE: the new t/string_eval.t test.  This fails on my OSX laptop even
+though the t/datetime.t test passes.  I can only assume this is a Good 
+Thing as it makes the bug more reproducible.
 
+  [abw@shiny ~/tt/TT-XS-Stash-DateTime] perl t/string_eval.t 
+  1..3
+  - dotop(eval_fail)
+  - fetch item: eval_fail
+  - fetching hash item
+  - got value, triggering any tied magic
+  - calling coderef
+  - in call_coderef()
+  - about to push args
+  - pushed args
+  - calling call_sv()
+  # About to use NonExistantClass
+  # Caught expected failure to use Nonexistent::Class at t/string_eval.t line 27.
+  # No tests run!
+
+If you haven't got the bug then you'll see the last 4 lines.
+
+  - called call_sv()
+  - called coderef, returning result
+  - TT_RET_CODEREF
+  ok 1 - eval failed as expected
+
+If you don't see those lines then congratulations, you've reproduced the 
+bug.  Now, can you fix it?  Please?  :-)

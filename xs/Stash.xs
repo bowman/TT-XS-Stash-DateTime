@@ -41,8 +41,6 @@ static SV*      dotop(pTHX_ SV*, SV*, AV*, int);
 static SV*      call_coderef(pTHX_ SV*, AV*);
 
 
-
-
 /* The get() method calls dotop().  Usually this does some complicated
  * stuff, but we've stripped it back to a simple call to tt_fetch_item()
  */ 

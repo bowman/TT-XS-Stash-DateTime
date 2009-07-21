@@ -21,9 +21,9 @@ my $year = DateTime->now->year;
 my $vars = {
     date_time     => DateTime->now,
     date_time_sub => sub { 
-        print STDERR "# Creating DateTime object\n";
+        warn "# Creating DateTime object\n";
         my $dt = DateTime->now( time_zone => 'local' );
-        print STDERR "# Created DateTime object, returning\n";
+        warn "# Created DateTime object, returning\n";
         return $dt;
     },
 };
