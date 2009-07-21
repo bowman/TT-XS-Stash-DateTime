@@ -14,12 +14,14 @@ use warnings;
 use lib qw( ./lib ../lib ../blib/lib ../blib/arch ./blib/lib ./blib/arch );
 use DateTime;
 use Template::Stash::XS;
-use Test::More tests => 3;
+use Test::More tests => 1;
 
 my $stash = Template::Stash::XS->new({
     date_time     => DateTime->now,
     date_time_sub => sub { DateTime->now },
 });
 
-print "The year is ", $stash->get('date_time')->year, "\n";
+my $year = $stash->get('date_time')->year;
+is( $year, DateTime->now->year, "The year is $year" );
+
 
