@@ -13,12 +13,9 @@
 use strict;
 use warnings;
 use lib qw( ./lib ../lib ../blib/lib ../blib/arch ./blib/lib ./blib/arch );
-use DateTime;
 use Template::Stash::XS;
-use Test::More tests => 3;
-use Template;
+use Test::More tests => 1;
 
-my $year = DateTime->now->year;
 my $vars = {
     eval_fail     => sub {
         warn "# About to use NonExistantClass\n";
