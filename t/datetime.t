@@ -1,6 +1,6 @@
 #============================================================= -*-perl-*-
 #
-# t/stash-xs.t
+# t/datetime.t
 #
 # Script testing the stripped down Template::Stash::XS to explore the
 # DateTime bug.
@@ -12,6 +12,7 @@
 use strict;
 use warnings;
 use lib qw( ./lib ../lib ../blib/lib ../blib/arch ./blib/lib ./blib/arch );
+use POSIX;
 use DateTime;
 use Template::Stash::XS;
 use Test::More tests => 4;
@@ -21,9 +22,9 @@ my $year = DateTime->now->year;
 my $vars = {
     date_time     => DateTime->now,
     date_time_sub => sub { 
-        print STDERR "Creating DateTime object\n";
-        my $dt = DateTime->now;
-        print STDERR "Created DateTime object, returning\n";
+        print STDERR "# Creating DateTime object\n";
+        my $dt = DateTime->now( time_zone => 'local' );
+        print STDERR "# Created DateTime object, returning\n";
         return $dt;
     },
 };
@@ -36,6 +37,7 @@ $result = $stash->get('date_time_sub')->year;
 is( $result, $year, "The year is $result (subroutine returning DateTime object)" );
 
 my $tt = Template->new(
+    STASH  => $stash,
     BLOCKS => {
         dt  => "ok 3 - The date is [% date_time %]\n",
         dts => "ok 4 - The date is [% date_time_sub %]\n",
@@ -45,3 +47,4 @@ my $tt = Template->new(
 # NOTE: this bypasses Test::More so expect "4 tests planned but ran 2"
 $tt->process( dt => $vars );
 $tt->process( dts => $vars );
+
