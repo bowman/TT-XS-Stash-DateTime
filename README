@@ -1,0 +1,77 @@
+This distribution includes a stripped down version of Template::Stash::XS
+for the purpose of tracking down a bug when using DateTime objects.
+See http://rt.cpan.org/Public/Bug/Display.html?id=48020
+
+To build and run the test:
+
+  $ perl Makefile.PL
+  $ make 
+  $ make test
+
+The bug only appears to manifest itself on 64 bit systems.
+
+If you don't have the bug on your system then you should see output like this:
+
+  [abw@shiny ~/tt/TT-XS-Stash-DateTime] make test
+  t/datetime......- dotop(date_time)
+  - fetch item: date_time
+  - fetching hash item
+  - got value, triggering any tied magic
+  - TT_RET_OK
+  t/datetime......1/2 - dotop(date_time_sub)
+  - fetch item: date_time_sub
+  - fetching hash item
+  - got value, triggering any tied magic
+  - calling coderef
+  - in call_coderef()
+  - about to push args
+  - pushed args
+  - calling call_sv()
+  # Creating DateTime object
+  # Created DateTime object, returning
+  - called call_sv()
+  - called coderef, returning result
+  - TT_RET_CODEREF
+  t/datetime......ok   
+  All tests successful.
+  Files=1, Tests=2,  0 wallclock secs ( 0.01 usr  0.01 sys +  0.20 cusr  0.02 csys =  0.24 CPU)
+  Result: PASS
+
+Or you can run the t/datetime.t script by itself (make sure you run 'make' first)
+
+  [abw@shiny ~/tt/TT-XS-Stash-DateTime] perl t/datetime.t 
+  1..2
+  - dotop(date_time)
+  - fetch item: date_time
+  - fetching hash item
+  - got value, triggering any tied magic
+  - TT_RET_OK
+  ok 1 - The year is 2009 (DateTime object)
+  - dotop(date_time_sub)
+  - fetch item: date_time_sub
+  - fetching hash item
+  - got value, triggering any tied magic
+  - calling coderef
+  - in call_coderef()
+  - about to push args
+  - pushed args
+  - calling call_sv()
+  # Creating DateTime object
+  # Created DateTime object, returning
+  - called call_sv()
+  - called coderef, returning result
+  - TT_RET_CODEREF
+  ok 2 - The year is 2009 (subroutine returning DateTime object)
+
+If the bug is present on your system then it won't proceed past this point:
+
+  # Created DateTime object, returning
+
+The final 4 lines will be missing
+
+  - called call_sv()
+  - called coderef, returning result
+  - TT_RET_CODEREF
+  ok 2 - The year is 2009 (subroutine returning DateTime object)
+
+

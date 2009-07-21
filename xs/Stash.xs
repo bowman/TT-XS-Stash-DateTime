@@ -29,9 +29,7 @@ extern "C" {
 #endif
 
 #define debug(...) fprintf(stderr, __VA_ARGS__)
-
 #define TT_STASH_PKG    "Template::Stash::XS"
-
 #define TT_LVALUE_FLAG  1
 #define TT_DEBUG_FLAG   2
 #define TT_DEFAULT_FLAG 4
@@ -43,14 +41,46 @@ static SV*      dotop(pTHX_ SV*, SV*, AV*, int);
 static SV*      call_coderef(pTHX_ SV*, AV*);
 
 
-/*------------------------------------------------------------------------
- * tt_fetch_item(pTHX_ SV *root, SV *key_sv, AV *args, SV **result)
- *
- * Retrieves an item from the given hash or array ref.  If item is found
- * and a coderef then the coderef will be called and passed args.  Returns
- * TT_RET_CODEREF or TT_RET_OK and sets result.  If not found, returns 
- * TT_RET_UNDEF and result is undefined.
- *------------------------------------------------------------------------*/
+
+
+/* The get() method calls dotop().  Usually this does some complicated
+ * stuff, but we've stripped it back to a simple call to tt_fetch_item()
+ */ 
+
+static SV *dotop(pTHX_ SV *root, SV *key_sv, AV *args, int flags) {
+    dSP;
+    STRLEN item_len;
+    char *item = SvPV(key_sv, item_len);
+    SV *result = &PL_sv_undef;
+    I32 atroot;
+
+    debug("- dotop(%s)\n", item);
+
+    switch(tt_fetch_item(aTHX_ root, key_sv, args, &result)) {
+        case TT_RET_OK:
+            /* return immediately */
+            debug("- TT_RET_OK\n");
+            break;
+                
+        case TT_RET_CODEREF:
+            /* fall through */
+            debug("- TT_RET_CODEREF\n");
+            break;
+                
+        default:
+            croak("Skipping default case");
+    }
+
+    return result;
+}
+
+
+
+/* tt_fetch_item() would usually fetch items from hash or list references,
+ * but we only need to worry about hash refs in order to demonstrate the bug.
+ * We get an item from the Stash root and call call_coderef() if it's a code
+ * reference.
+ */
 
 static TT_RET tt_fetch_item(pTHX_ SV *root, SV *key_sv, AV *args, SV **result) {
     STRLEN key_len;
@@ -98,51 +128,9 @@ static TT_RET tt_fetch_item(pTHX_ SV *root, SV *key_sv, AV *args, SV **result) {
 }
 
 
-
-/*------------------------------------------------------------------------
- * dotop(pTHX_ SV *root, SV *key_sv, AV *args, int flags)
- *
- * Resolves dot operations of the form root.key, where 'root' is a
- * reference to the root item, 'key_sv' is an SV containing the
- * operation key (e.g. hash key, list index, first, last, each, etc),
- * 'args' is a list of additional arguments and 'TT_LVALUE_FLAG' is a 
- * flag to indicate if, for certain operations (e.g. hash key), the item
- * should be created if it doesn't exist.  Also, 'TT_DEBUG_FLAG' is the 
- * debug flag.
- *------------------------------------------------------------------------*/
-
-static SV *dotop(pTHX_ SV *root, SV *key_sv, AV *args, int flags) {
-    dSP;
-    STRLEN item_len;
-    char *item = SvPV(key_sv, item_len);
-    SV *result = &PL_sv_undef;
-    I32 atroot;
-
-    debug("- dotop(%s)\n", item);
-
-    switch(tt_fetch_item(aTHX_ root, key_sv, args, &result)) {
-        case TT_RET_OK:
-            /* return immediately */
-            debug("- TT_RET_OK\n");
-            break;
-                
-        case TT_RET_CODEREF:
-            /* fall through */
-            debug("- TT_RET_CODEREF\n");
-            break;
-                
-        default:
-            croak("Skipping default case");
-    }
-
-    return result;
-}
-
-
-
-/* pushes any arguments in 'args' onto the stack then calls the code ref
- * in 'code'.  Calls fold_results() to return a listref or die.
+/* call_coderef() handles a callback to a Perl code reference.
  */
+
 static SV *call_coderef(pTHX_ SV *code, AV *args) {
     dSP;
     SV **svp;
@@ -190,6 +178,7 @@ PROTOTYPES: DISABLED
 #-----------------------------------------------------------------------
 # get(SV *root, SV *ident, SV *args)
 #-----------------------------------------------------------------------
+
 SV *
 get(root, ident, ...)
     SV *root
