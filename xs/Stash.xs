@@ -57,7 +57,7 @@ static TT_RET tt_fetch_item(pTHX_ SV *root, SV *key_sv, AV *args, SV **result) {
     char *key = SvPV(key_sv, key_len);
     SV **value = NULL;
 
-    debug("fetch item: %s\n", key);
+    debug("- fetch item: %s\n", key);
 
     /* negative key_len is used to indicate UTF8 string */
     if (SvUTF8(key_sv))
@@ -67,11 +67,11 @@ static TT_RET tt_fetch_item(pTHX_ SV *root, SV *key_sv, AV *args, SV **result) {
         croak("not a hash ref");
     }
     
-    debug("fetching hash item\n");
+    debug("- fetching hash item\n");
     value = hv_fetch((HV *) SvRV(root), key, key_len, FALSE);
 
     if (value) {
-        debug("got value, triggering any tied magic\n");
+        debug("- got value, triggering any tied magic\n");
 
         /* trigger any tied magic to FETCH value */
         SvGETMAGIC(*value);
@@ -80,9 +80,9 @@ static TT_RET tt_fetch_item(pTHX_ SV *root, SV *key_sv, AV *args, SV **result) {
         if (SvROK(*value) 
             && (SvTYPE(SvRV(*value)) == SVt_PVCV) 
             && !sv_isobject(*value)) {
-            debug("calling coderef\n");
+            debug("- calling coderef\n");
             *result = call_coderef(aTHX_ *value, args);
-            debug("called coderef, returning result\n");
+            debug("- called coderef, returning result\n");
             return TT_RET_CODEREF;
             
         } 
@@ -118,17 +118,17 @@ static SV *dotop(pTHX_ SV *root, SV *key_sv, AV *args, int flags) {
     SV *result = &PL_sv_undef;
     I32 atroot;
 
-    debug("dotop(%s)\n", item);
+    debug("- dotop(%s)\n", item);
 
     switch(tt_fetch_item(aTHX_ root, key_sv, args, &result)) {
         case TT_RET_OK:
             /* return immediately */
-            debug("TT_RET_OK\n");
+            debug("- TT_RET_OK\n");
             break;
                 
         case TT_RET_CODEREF:
             /* fall through */
-            debug("TT_RET_CODEREF\n");
+            debug("- TT_RET_CODEREF\n");
             break;
                 
         default:
@@ -150,21 +150,21 @@ static SV *call_coderef(pTHX_ SV *code, AV *args) {
     I32 i;
     SV *retval = &PL_sv_undef;
 
-    debug("in call_coderef()\n");
+    debug("- in call_coderef()\n");
 
     PUSHMARK(SP);
 
-    debug("about to push args\n");
+    debug("- about to push args\n");
     for (i = 0; i <= count; i++)
         if ((svp = av_fetch(args, i, FALSE)))
             XPUSHs(*svp);
-    debug("pushed args\n");
+    debug("- pushed args\n");
 
     PUTBACK;
 
-    debug("calling call_sv()\n");
+    debug("- calling call_sv()\n");
     count = call_sv(code, G_ARRAY);
-    debug("called call_sv()\n");
+    debug("- called call_sv()\n");
 
 
     SPAGAIN;
