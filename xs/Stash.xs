@@ -68,20 +68,13 @@ static TT_RET tt_fetch_item(pTHX_ SV *root, SV *key_sv, AV *args, SV **result) {
     if (SvUTF8(key_sv))
         key_len = -key_len;
     
-    if (!SvROK(root)) 
+    if (! (SvROK(root) && SvTYPE(SvRV(root)) == SVt_PVHV)) {
+        debug("not a hash ref");
         return TT_RET_UNDEF;
-    
-    switch (SvTYPE(SvRV(root))) {
-      case SVt_PVHV:
-        debug("fetched hash item\n");
-        value = hv_fetch((HV *) SvRV(root), key, key_len, FALSE);
-        break;
-
-      case SVt_PVAV:
-        if (looks_like_number(key_sv))
-            value = av_fetch((AV *) SvRV(root), SvIV(key_sv), FALSE);
-        break;
     }
+    
+    debug("fetching hash item\n");
+    value = hv_fetch((HV *) SvRV(root), key, key_len, FALSE);
 
     if (value) {
         debug("got value, triggering any tied magic\n");
@@ -163,19 +156,27 @@ static SV *call_coderef(pTHX_ SV *code, AV *args) {
     I32 i;
     SV *retval;
 
+    debug("in call_coderef()\n");
+
     PUSHMARK(SP);
-    for (i = 0; i <= count; i++)
-        if ((svp = av_fetch(args, i, FALSE))) 
-            XPUSHs(*svp);
+
+    debug("about to push args\n");
+
+// HMMM - this code appears to be failing on my Macbook where the 
+// original bug *doesn't* manifest itself....  that suggests I've either
+// chopped out something I shouldn't have, or we're closer to the bug...
+
+//    for (i = 0; i <= count; i++)
+//        if ((svp = av_fetch(args, i, FALSE))) 
+//            XPUSHs(*svp);
+
+    debug("pushed args\n");
+
     PUTBACK;
+
     debug("calling call_sv()\n");
-    count = call_sv(code, G_ARRAY|G_EVAL);
-    /* Check the eval first */
-    if (SvTRUE(ERRSV))
-    {
-        croak("Error thrown in call_sv() - %s\n", SvPV_nolen(ERRSV));
-        POPs;
-    }
+
+    count = call_sv(code, G_ARRAY);
 
     SPAGAIN;
 

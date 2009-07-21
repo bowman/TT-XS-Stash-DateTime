@@ -14,14 +14,22 @@ use warnings;
 use lib qw( ./lib ../lib ../blib/lib ../blib/arch ./blib/lib ./blib/arch );
 use DateTime;
 use Template::Stash::XS;
-use Test::More tests => 1;
+use Test::More tests => 2;
 
+my $year  = DateTime->now->year;
 my $stash = Template::Stash::XS->new({
     date_time     => DateTime->now,
-    date_time_sub => sub { DateTime->now },
+    date_time_sub => sub { 
+        print STDERR "Creating DateTime object\n";
+        my $dt = DateTime->now;
+        print STDERR "Created DateTime object, returning\n";
+        return $dt;
+    },
 });
 
-my $year = $stash->get('date_time')->year;
-is( $year, DateTime->now->year, "The year is $year" );
+my $result = $stash->get('date_time')->year;
+is( $result, $year, "The year is $result (DateTime object)" );
 
+$result = $stash->get('date_time_sub')->year;
+is( $result, $year, "The year is $result (subroutine returning DateTime object)" );
 
