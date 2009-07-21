@@ -154,6 +154,7 @@ static SV *call_coderef(pTHX_ SV *code, AV *args) {
     SV **svp;
     I32 count = (args && args != Nullav) ? av_len(args) : -1;
     I32 i;
+    SV *retval = &PL_sv_undef;
 
     debug("in call_coderef()\n");
 
@@ -176,8 +177,12 @@ static SV *call_coderef(pTHX_ SV *code, AV *args) {
     SPAGAIN;
 
     debug("called call_sv()\n");
-    
-    return fold_results(aTHX_ count);
+
+    if (count)
+        retval = POPs; 
+    PUTBACK;
+
+    return retval;
 }
 
 
@@ -246,24 +251,8 @@ get(root, ident, ...)
     STRLEN len;
     char *str;
 
-    /* look for a list ref of arguments, passed as third argument */
-    args = 
-        (items > 2 && SvROK(ST(2)) && SvTYPE(SvRV(ST(2))) == SVt_PVAV) 
-        ? (AV *) SvRV(ST(2)) : Nullav;
-     
-    if (SvROK(ident) && (SvTYPE(SvRV(ident)) == SVt_PVAV)) {
-        croak(TT_STASH_PKG ": get(\\@list) has been removed");
-    } 
-    else if (SvROK(ident)) {
-        croak(TT_STASH_PKG ": get (arg 2) must be a scalar or listref");
-    } 
-    else if ((str = SvPV(ident, len)) && memchr(str, '.', len)) {
-        croak(TT_STASH_PKG ": get('dotted.string') has been removed");
-    } 
-    else {
-        /* otherwise ident is a scalar so we call dotop() just once */
-        RETVAL = dotop(aTHX_ root, ident, args, flags);
-    }
+    /* assume ident is a scalar so we call dotop() just once */
+    RETVAL = dotop(aTHX_ root, ident, args, flags);
 
     if (!SvOK(RETVAL)) {
         croak("get() got no RETVAL");

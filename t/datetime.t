@@ -12,7 +12,6 @@
 use strict;
 use warnings;
 use lib qw( ./lib ../lib ../blib/lib ../blib/arch ./blib/lib ./blib/arch );
-use POSIX;
 use DateTime;
 use Template::Stash::XS;
 use Test::More tests => 4;
