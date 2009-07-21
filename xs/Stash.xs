@@ -41,11 +41,6 @@ typedef enum tt_ret { TT_RET_UNDEF, TT_RET_OK, TT_RET_CODEREF } TT_RET;
 static TT_RET   tt_fetch_item(pTHX_ SV*, SV*, AV*, SV**);
 static SV*      dotop(pTHX_ SV*, SV*, AV*, int);
 static SV*      call_coderef(pTHX_ SV*, AV*);
-static SV*      fold_results(pTHX_ I32);
-static AV*      mk_mortal_av(pTHX_ SV*, AV*, SV*);
-
-#define THROW_SIZE 64
-static char throw_fmt[] = "Can't locate object method \"%s\" via package \"%s\"";
 
 
 /*------------------------------------------------------------------------
@@ -69,8 +64,7 @@ static TT_RET tt_fetch_item(pTHX_ SV *root, SV *key_sv, AV *args, SV **result) {
         key_len = -key_len;
     
     if (! (SvROK(root) && SvTYPE(SvRV(root)) == SVt_PVHV)) {
-        debug("not a hash ref");
-        return TT_RET_UNDEF;
+        croak("not a hash ref");
     }
     
     debug("fetching hash item\n");
@@ -161,71 +155,27 @@ static SV *call_coderef(pTHX_ SV *code, AV *args) {
     PUSHMARK(SP);
 
     debug("about to push args\n");
-
     for (i = 0; i <= count; i++)
         if ((svp = av_fetch(args, i, FALSE)))
             XPUSHs(*svp);
-
     debug("pushed args\n");
 
     PUTBACK;
 
     debug("calling call_sv()\n");
-
     count = call_sv(code, G_ARRAY);
+    debug("called call_sv()\n");
+
 
     SPAGAIN;
 
-    debug("called call_sv()\n");
-
     if (count)
         retval = POPs; 
+
     PUTBACK;
 
     return retval;
 }
-
-
-/* pops 'count' items off the stack, folding them into a list reference
- * if count > 1, or returning the sole item if count == 1.  
- * Returns undef if count == 0. 
- * Dies if first value of list is undef
- */
-static SV* fold_results(pTHX_ I32 count) {
-    dSP;
-    SV *retval = &PL_sv_undef;
-
-    debug("folding results\n");
-    
-    if (count > 1) {
-        /* convert multiple return items into a list reference */
-        AV *av = newAV();
-        SV *last_sv = &PL_sv_undef;
-        SV *sv = &PL_sv_undef;
-        I32 i;
-
-        av_extend(av, count - 1);
-        for(i = 1; i <= count; i++) {
-            last_sv = sv;
-            sv = POPs; 
-            if (SvOK(sv) && !av_store(av, count - i, SvREFCNT_inc(sv))) 
-                SvREFCNT_dec(sv);
-        }
-        PUTBACK;
-        
-        retval = sv_2mortal((SV *) newRV_noinc((SV *) av));
-    } 
-    else { 
-        if (count)
-            retval = POPs; 
-        PUTBACK;
-    }
-
-    debug("fold_results() returning\n");
-
-    return retval;
-}
-
 
 
 /*====================================================================
