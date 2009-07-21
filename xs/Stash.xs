@@ -162,13 +162,9 @@ static SV *call_coderef(pTHX_ SV *code, AV *args) {
 
     debug("about to push args\n");
 
-// HMMM - this code appears to be failing on my Macbook where the 
-// original bug *doesn't* manifest itself....  that suggests I've either
-// chopped out something I shouldn't have, or we're closer to the bug...
-
-//    for (i = 0; i <= count; i++)
-//        if ((svp = av_fetch(args, i, FALSE))) 
-//            XPUSHs(*svp);
+    for (i = 0; i <= count; i++)
+        if ((svp = av_fetch(args, i, FALSE)))
+            XPUSHs(*svp);
 
     debug("pushed args\n");
 
@@ -245,13 +241,13 @@ get(root, ident, ...)
     SV *root
     SV *ident
     CODE:
-    AV *args;
+    AV *args = NULL;
     int flags = 0;
     int n;
     STRLEN len;
     char *str;
 
-    /* otherwise ident is a scalar so we call dotop() just once */
+    /* assume ident is a scalar so we call dotop() just once */
     RETVAL = dotop(aTHX_ root, ident, args, flags);
 
     if (!SvOK(RETVAL)) {

@@ -11,7 +11,7 @@
 
 use strict;
 use warnings;
-#use lib qw( ./lib ../lib ../blib/lib ../blib/arch ./blib/lib ./blib/arch );
+use lib qw( ./lib ../lib ../blib/lib ../blib/arch ./blib/lib ./blib/arch );
 use DateTime;
 use Template::Stash::XS;
 use Test::More tests => 4;
@@ -42,5 +42,6 @@ my $tt = Template->new(
     }
 );
 
+# NOTE: this bypasses Test::More so expect "4 tests planned but ran 2"
 $tt->process( dt => $vars );
 $tt->process( dts => $vars );

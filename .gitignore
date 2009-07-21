@@ -1,0 +1,6 @@
+Makefile
+pm_to_blib
+blib
+xs/Stash.c
+xs/Stash.o
+xs/XS.bs
